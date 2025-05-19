@@ -1,7 +1,7 @@
 #pragma once
 #include <windows.h>
 
-//获取要保存的ini文件的路径
+// 获取要保存的ini文件的路径
 /* void GetIniPath(char* path)
 {
 	GetModuleFileName(NULL, path, 256);	//获得当前exe文件的绝对路径
@@ -13,16 +13,16 @@
 		path[i] = temp[j];
 }
  */
-//向ini文件写入一个int数据
-inline void WriteIntToIni(char* AppName, char* KeyName, int value)
+// 向ini文件写入一个int数据
+inline void WriteIntToIni(char *AppName, char *KeyName, int value)
 {
 	char buff[11];
 	_itoa_s(value, buff, 10);
-	WritePrivateProfileStringA(AppName,KeyName,buff, "./config.ini");
+	WritePrivateProfileStringA(AppName, KeyName, buff, "./config.ini");
 }
 
-//从ini文件读取一个int数据
-inline int GetIntFromIni(char* AppName, char* KeyName, int Default)
+// 从ini文件读取一个int数据
+inline int GetIntFromIni(char *AppName, char *KeyName, int Default)
 {
 	return GetPrivateProfileIntA(AppName, KeyName, Default, "./config.ini");
 }
