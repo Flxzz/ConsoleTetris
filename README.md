@@ -1,4 +1,29 @@
+## 新的内容
+
+在之前版本添加了如下功能：
+
+1. 暂停之后，按R重新开始游戏.
+2. 加入消除方块和游戏结束的声音.（之前也有，但是代码有bug放不出声，这里修复了这些bug）
+3. 记录最高分，下次打开文件自动加载.
+
+g++编译方法：
+
+转到Game.cpp所在文件夹，输入以下命令
+
+```g++
+g++ -finput-charset=GB2312 -fexec-charset=GB2312 Game.cpp -o game.exe -lwinmm
+```
+
+因为文件存储为GB2312编码，"-finput-charset=GB2312 -fexec-charset=GB2312" 告诉编译器该文件用GB2312去编译。-lwinmm用于链接windows多媒体库，用于播放音乐。
+
+
+
+以下为项目原README文档。
+
+
+
 # ConsoleTetris
+
 这是一个基于Windows控制台的俄罗斯方块游戏。
 
 它除了提供基本俄罗斯方块游戏以外，还有双人模式、隐形模式、道具系统、键位设置、界面宽度设置等功能。

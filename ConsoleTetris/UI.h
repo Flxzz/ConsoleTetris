@@ -10,6 +10,10 @@
 #include <windows.h>
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <thread>
+#include <chrono>
+#include <sstream>
 using std::ifstream;
 using std::ofstream;
 
@@ -23,8 +27,9 @@ private:
 	CBlock NextBlock1;	  // 玩家1的下一个方块
 	CBlock NextBlock2;	  // 玩家2的下一个方块
 
-	int m_score{0}; // 游戏得分
-	int m_level{1}; // 游戏等级
+	int m_score{0};	  // 游戏得分
+	int m_level{1};	  // 游戏等级
+	int highscore{0}; // 最高分
 
 	int m_strip_number{0};	// 长条道具的数量
 	int m_bomb_number{0};	// 炸弹道具的数量
@@ -63,14 +68,16 @@ private:
 	int m_2_rotate_key; // 方块旋转键
 	int m_2_sink_key;	// 方块直接下落键
 
-	void CalculateLevel();					   // 计算等级
-	void ShowSettingsInfo(int x, int y) const; // 在坐标x,y处显示选项设置中的信息
-	void ColorSettings();					   // 方块颜色设置
-	void DrawBoardVisible() const;			   // 在任何时候都显示界面（用于在隐形模式时显示界面）
-	void ShowPause() const;					   // 显示暂停时的游戏界面
-	void Pause();							   // 暂停处理
-	void KeySettings();						   // 键位设置
-	void CalculateBoardXAndBlockPosition();	   // 根据界面宽度计算绘制界面的起始x坐标和方块起始x坐标
+	void CalculateLevel();						 // 计算等级
+	void ShowSettingsInfo(int x, int y) const;	 // 在坐标x,y处显示选项设置中的信息
+	void ColorSettings();						 // 方块颜色设置
+	void DrawBoardVisible() const;				 // 在任何时候都显示界面（用于在隐形模式时显示界面）
+	void ShowPause() const;						 // 显示暂停时的游戏界面
+	void Pause();								 // 暂停处理
+	void KeySettings();							 // 键位设置
+	void CalculateBoardXAndBlockPosition();		 // 根据界面宽度计算绘制界面的起始x坐标和方块起始x坐标
+	void playmusic(const std::string &filename); // 播放音效
+	void start();								 // 游戏开始时的处理
 
 public:
 	CUI();
@@ -94,10 +101,12 @@ public:
 
 	int GetIntervalTime() const; // 根据当前等级计算方块下落时的间隔时间（单位：ms）
 
-	void SaveData() const;	   // 将游戏数据保存到文件
-	void LoadData();		   // 从文件载入游戏数据
-	void SaveSettings() const; // 将游戏设置保存到ini文件
-	void LoadSettings();	   // 从ini文件载入游戏数据
+	void LoadHighScore();		// 读取最高分
+	void SaveHighScore() const; // 保存最高分
+	void SaveData() const;		// 将游戏数据保存到文件
+	void LoadData();			// 从文件载入游戏数据
+	void SaveSettings() const;	// 将游戏设置保存到ini文件
+	void LoadSettings();		// 从ini文件载入游戏数据
 
 	bool GetAutoSave() const;			 // 获取是否自动存档选项
 	int GetDownKey(Player player) const; // 获取方块下移键的设定
@@ -106,6 +115,11 @@ public:
 };
 
 CUI::CUI()
+{
+	start();
+}
+
+void CUI::start()
 {
 	for (int i{0}; i < WIDTH; i++)
 	{
@@ -134,6 +148,13 @@ CUI::CUI()
 	CurrentBlock2 = CBlock(type, static_cast<Direction>(rand() % 4), m_color_table[type], m_block2_x); // 随机生成一个当前方块2的类型和朝向
 	type = static_cast<BlockType>(rand() % 7);
 	NextBlock2 = CBlock(type, static_cast<Direction>(rand() % 4), m_color_table[type], m_block2_x); // 随机生成下一个方块2的类型和朝向
+}
+
+void CUI::playmusic(const std::string &filename)
+{
+	std::thread([filename]
+				{ PlaySoundA(filename.c_str(), NULL, SND_FILENAME); })
+		.detach();
 }
 
 void CUI::DrawBoard() const
@@ -175,13 +196,13 @@ inline bool CUI::BlockLandTest(Player player)
 	{
 		land_flag = CurrentBlock1.LandTest(m_board, m_width);
 		if (land_flag && m_sound_effect && CurrentBlock1.GetBlockType() != B_BOMB)
-			PlaySound(_T("./sound/land.wav"), NULL, SND_ASYNC | SND_FILENAME);
+			playmusic("../sound/land.wav");
 	}
 	else
 	{
 		land_flag = CurrentBlock2.LandTest(m_board, m_width);
 		if (land_flag && m_sound_effect && CurrentBlock2.GetBlockType() != B_BOMB)
-			PlaySound(_T("./sound/land.wav"), NULL, SND_ASYNC | SND_FILENAME);
+			playmusic("../sound/land.wav");
 	}
 	return land_flag;
 }
@@ -201,7 +222,7 @@ void CUI::ClearLine()
 	if (CurrentBlock1.GetBlockType() == B_BOMB) // 当前方块是炸弹时消除炸弹所在区域及其下方4x4共4x8区域内的所有方块
 	{
 		if (m_sound_effect)
-			PlaySound(_T("./sound/bomb.wav"), NULL, SND_ASYNC | SND_FILENAME);
+			playmusic("../sound/bomb.wav");
 		for (i = 0; i < 4; i++)
 			for (j = 0; j < 8; j++)
 			{
@@ -216,7 +237,7 @@ void CUI::ClearLine()
 	else if (CurrentBlock2.GetBlockType() == B_BOMB)
 	{
 		if (m_sound_effect)
-			PlaySound(_T("./sound/bomb.wav"), NULL, SND_ASYNC | SND_FILENAME);
+			playmusic("../sound/bomb.wav");
 		for (i = 0; i < 4; i++)
 			for (j = 0; j < 8; j++)
 			{
@@ -242,7 +263,7 @@ void CUI::ClearLine()
 			if (clear_flag) // 如果当前行可以消除
 			{
 				if (m_sound_effect)
-					PlaySound(_T("./sound/clear.wav"), NULL, SND_ASYNC | SND_FILENAME);
+					playmusic("../sound/clear.wav");
 				if (m_invisible_mode && m_invisible_mode_difficulty <= 1 && clear_count == 0) // 隐形模式且难度为低或中时如果有消除行，则在消除第一行之前显示界面500毫秒
 				{
 					DrawBoardVisible();
@@ -330,21 +351,41 @@ void CUI::ClearLine()
 	{
 	case 1:
 		m_score += 1;
+		if (m_score > highscore)
+		{
+			highscore = m_score;
+			SaveHighScore();
+		}
 		if (rand() % 10 == 0)
 			GetAProp(); // 消除1行1/10的概率获得道具
 		break;
 	case 2:
 		m_score += 3;
+		if (m_score > highscore)
+		{
+			highscore = m_score;
+			SaveHighScore();
+		}
 		if (rand() % 4 == 0)
 			GetAProp(); // 消除2行1/4的概率获得道具
 		break;
 	case 3:
-		m_score += 5;
+		m_score += 6;
+		if (m_score > highscore)
+		{
+			highscore = m_score;
+			SaveHighScore();
+		}
 		if (rand() % 2 == 0)
 			GetAProp(); // 消除3行1/2的概率获得道具
 		break;
 	case 4:
-		m_score += 8;
+		m_score += 10;
+		if (m_score > highscore)
+		{
+			highscore = m_score;
+			SaveHighScore();
+		}
 		GetAProp(); // 消除4行必定获得一个道具
 		break;
 	default:
@@ -430,8 +471,8 @@ void CUI::KeyDetect(int key)
 	}
 	else if (key == m_1_rotate_key)
 	{
-		if (m_sound_effect)
-			PlaySound(_T("./sound/rotate.wav"), NULL, SND_ASYNC | SND_FILENAME);
+		// if (m_sound_effect)
+		// 	playmusic("../sound/rotate.wav");
 		CurrentBlock1.RotateBlock(m_board, m_width); // 执行旋转操作
 	}
 	else if (key == m_1_sink_key)
@@ -454,8 +495,8 @@ void CUI::KeyDetect(int key)
 	}
 	else if (key == m_2_rotate_key && m_double_player)
 	{
-		if (m_sound_effect)
-			PlaySound(_T("./sound/rotate.wav"), NULL, SND_ASYNC | SND_FILENAME);
+		// if (m_sound_effect)
+		// 	playmusic("../sound/rotate.wav");
 		CurrentBlock2.RotateBlock(m_board, m_width); // 执行旋转操作
 	}
 	else if (key == m_2_sink_key && m_double_player)
@@ -552,14 +593,16 @@ void CUI::ShowInfo() const
 	const int x_right_info{29}; // 右侧信息的起始x坐标
 	const int y_right_info{3};	// 右侧信息的起始y坐标
 	PrintString(L"俄罗斯方块    版本：", 2, 0, WHITE);
-	PrintString(L"1.93", 12, 0, YELLOW);
-	PrintString(L"作者：ZY    邮箱：380526481@qq.com", 16, 0, WHITE);
+	PrintString(L"2.00", 12, 0, YELLOW);
+	PrintString(L"作者：FLX    邮箱：455172052@qq.com", 16, 0, WHITE);
+	PrintString(L"最高分：", x_left_info, y_left_info - 2, WHITE);
+	PrintInt(highscore, x_left_info + 4, y_left_info - 2, CYAN);
 	PrintString(L"得分：", x_left_info, y_left_info, WHITE);
-	PrintInt(m_score, x_left_info + 3, y_left_info, CYAN);
+	PrintInt(m_score, x_left_info + 4, y_left_info, CYAN);
 	if (m_allow_level_up) // 只有允许升级时才显示等级信息
 	{
 		PrintString(L"等级：", x_left_info, y_left_info + 2, WHITE);
-		PrintInt(m_level, x_left_info + 3, y_left_info + 2, CYAN);
+		PrintInt(m_level, x_left_info + 4, y_left_info + 2, CYAN);
 	}
 
 	if (m_strip_number > 0)
@@ -653,7 +696,7 @@ void CUI::ShowPause() const
 		for (j = 0; j < HEIGHT; j++)
 			PrintCell(m_board[i][j], i + m_board_x, j + BOARD_Y, CYAN);
 	PrintString(L"        已暂停，按回车键继续……        ", BOARD_X, BOARD_Y + 9, CYAN);
-	PrintString(L"      S：保存    L：载入    O：选项     ", BOARD_X, BOARD_Y + 10, CYAN);
+	PrintString(L" S：保存   L：载入   O：选项   R:重新开始   ", BOARD_X, BOARD_Y + 10, CYAN);
 }
 
 void CUI::Pause()
@@ -688,6 +731,20 @@ void CUI::Pause()
 			OptionSettings();
 			ShowInfo();
 			ShowPause();
+		}
+		if (key == 'R')
+		{
+			system("cls");
+			m_score = 0;
+			m_level = 1;
+
+			m_strip_number = 0;
+			m_bomb_number = 0;
+			m_pierce_number = 0;
+			start();
+			ShowInfo();
+			DrawBoard();
+			break;
 		}
 	}
 }
@@ -852,6 +909,28 @@ void CUI::LoadData()
 	OpenFile.close();
 }
 
+void CUI::LoadHighScore()
+{
+	std::ifstream in("score.ini");
+	std::string line;
+	while (std::getline(in, line))
+	{
+		if (line.find("HighScore=") != std::string::npos)
+		{
+			std::string value = line.substr(line.find("=") + 1);
+			highscore = std::stoi(value);
+		}
+	}
+}
+
+void CUI::SaveHighScore() const
+{
+	std::ofstream out("score.ini");
+	out << "[Game]\n";
+	out << "HighScore=" << highscore << std::endl;
+	out.close();
+}
+
 void CUI::SaveSettings() const
 {
 	WriteIntToIni("配置", "消除动画", m_clear_animation);
@@ -887,6 +966,7 @@ void CUI::SaveSettings() const
 
 void CUI::LoadSettings()
 {
+	LoadHighScore();
 	m_clear_animation = (GetIntFromIni("配置", "消除动画", 1) != 0);
 	m_clear_animation_speed = GetIntFromIni("配置", "消除动画间隔时间", 40);
 	if (m_clear_animation_speed < 5)

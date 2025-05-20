@@ -1,44 +1,43 @@
 #pragma once
-#include"Define.h"
-#include<fstream>
-#include<iostream>
-using std::ofstream;
+#include "Define.h"
+#include <fstream>
+#include <iostream>
 using std::ifstream;
+using std::ofstream;
 
 class CUI
 {
 private:
-	Cell m_board[WIDTH][HEIGHT];		//储存当前游戏界面中10x20的每个格子的状态和颜色
-	int m_x{ 0 };		//光标位置
-	int m_y{ 0 };
-	bool m_map_edit{ true };			//true时编辑地图，false时编辑设置
-	int m_item_select{ 1 };			//选中的项目
-	const int m_max_item{ 4 };		//总的选项个数
+	Cell m_board[WIDTH][HEIGHT]; // 储存当前游戏界面中10x20的每个格子的状态和颜色
+	int m_x{0};					 // 光标位置
+	int m_y{0};
+	bool m_map_edit{true};	 // true时编辑地图，false时编辑设置
+	int m_item_select{1};	 // 选中的项目
+	const int m_max_item{4}; // 总的选项个数
 
-	//选项设置数据
-	int m_score{ 0 };		//游戏得分
-	int m_strip_number{ 0 };		//长条道具的数量
-	int m_bomb_number{ 0 };		//炸弹道具的数量
-	int m_pierce_number{ 0 };		//穿甲弹道具的数量
+	// 选项设置数据
+	int m_score{0};			// 游戏得分
+	int m_strip_number{0};	// 长条道具的数量
+	int m_bomb_number{0};	// 炸弹道具的数量
+	int m_pierce_number{0}; // 穿甲弹道具的数量
 
-	void DrawBoard() const;			//绘制游戏界面
-	void ShowInfo() const;			//显示游戏信息
-	void ShowHelpInfo() const;		//显示帮助信息
+	void DrawBoard() const;	   // 绘制游戏界面
+	void ShowInfo() const;	   // 显示游戏信息
+	void ShowHelpInfo() const; // 显示帮助信息
 
 public:
 	CUI();
-	void ShowFixedInfo() const;		//显示界面中固定不变的信息
-	void KeyDetect(int key);			//检测键盘输入
-	void SaveToFile() const;		//将游戏状态保存到文件
-	void LoadFromFile();		//从文件载入游戏状态
-
+	void ShowFixedInfo() const; // 显示界面中固定不变的信息
+	void KeyDetect(int key);	// 检测键盘输入
+	void SaveToFile() const;	// 将游戏状态保存到文件
+	void LoadFromFile();		// 从文件载入游戏状态
 };
 
 CUI::CUI()
 {
-	for (int i{ 0 }; i < WIDTH; i++)
+	for (int i{0}; i < WIDTH; i++)
 	{
-		for (int j{ 0 }; j < HEIGHT; j++)
+		for (int j{0}; j < HEIGHT; j++)
 		{
 			m_board[i][j].type = EMPTY_CELL;
 			m_board[i][j].color = GRAY;
@@ -60,7 +59,7 @@ void CUI::ShowFixedInfo() const
 	PrintString("俄罗斯方块存档编辑器", SETTINGS_X, SETTINGS_Y + 14, WHITE);
 	PrintString("版本：1.3", SETTINGS_X, SETTINGS_Y + 15, WHITE);
 	PrintString("适用于俄罗斯方块版本版本：1.92", SETTINGS_X, SETTINGS_Y + 16, GRAY);
-	
+
 	PrintString("地图编辑", MAP_X, MAP_Y - 1, CYAN);
 	PrintString("数据编辑", SETTINGS_X, SETTINGS_Y - 1, CYAN);
 
@@ -85,7 +84,7 @@ void CUI::ShowInfo() const
 
 	if (m_map_edit)
 	{
-		for (int i{ 0 }; i <= m_max_item; i++)
+		for (int i{0}; i <= m_max_item; i++)
 		{
 			PrintString("  ", SETTINGS_X - 1, SETTINGS_Y + 1 + i, WHITE);
 		}
@@ -96,7 +95,7 @@ void CUI::ShowInfo() const
 	{
 		PrintString("  ", MAP_X - 1, MAP_Y - 1, WHITE);
 		PrintString("◆", SETTINGS_X - 1, SETTINGS_Y - 1, CYAN);
-		for (int i{ 0 }; i <= m_max_item; i++)
+		for (int i{0}; i <= m_max_item; i++)
 		{
 			PrintString("  ", SETTINGS_X - 1, SETTINGS_Y + 1 + i, WHITE);
 		}
@@ -108,120 +107,163 @@ void CUI::KeyDetect(int key)
 {
 	switch (key)
 	{
-		case TAB_KEY: 
-			m_map_edit = !m_map_edit;
-			ShowInfo();
-			break;
-		case 'H': case'h':
-			ShowHelpInfo();
-			ShowFixedInfo();
-			ShowInfo();
-			break;
-		default:
-			break;
+	case TAB_KEY:
+		m_map_edit = !m_map_edit;
+		ShowInfo();
+		break;
+	case 'H':
+	case 'h':
+		ShowHelpInfo();
+		ShowFixedInfo();
+		ShowInfo();
+		break;
+	default:
+		break;
 	}
-	if (m_map_edit)		//编辑地图
+	if (m_map_edit) // 编辑地图
 	{
 		CursorVisible(true);
 		GotoXY(m_x + MAP_X, m_y + MAP_Y);
 		switch (key)
 		{
-			case UP_KEY:
-				m_y--;
-				if (m_y < 0) m_y = HEIGHT - 1;
-				break;
-			case DOWN_KEY:
-				m_y++;
-				if (m_y >= HEIGHT) m_y = 0;
-				break;
-			case LEFT_KEY:
-				m_x--;
-				if (m_x < 0) m_x = WIDTH - 1;
-				break;
-			case RIGHT_KEY:
-				m_x++;
-				if (m_x >= WIDTH) m_x = 0;
-				break;
-			case SPACE_KEY:
-				m_board[m_x][m_y].type = !m_board[m_x][m_y].type;
-				//DrawBoard();
-				PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y);
-				break;
-			case 'W': case 'w': m_board[m_x][m_y].color = WHITE; PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y); break;
-			case 'R': case 'r': m_board[m_x][m_y].color = RED; PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y); break;
-			case 'G': case 'g': m_board[m_x][m_y].color = GREEN; PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y); break;
-			case 'B': case 'b': m_board[m_x][m_y].color = BLUE; PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y); break;
-			case 'Y': case 'y': m_board[m_x][m_y].color = YELLOW; PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y); break;
-			case 'C': case 'c': m_board[m_x][m_y].color = CYAN; PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y); break;
-			case 'P': case 'p': m_board[m_x][m_y].color = PURPLE; PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y); break;
-			case 'A':case'a': m_board[m_x][m_y].color = GRAY; PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y); break;
-			default:
-				break;
+		case UP_KEY:
+			m_y--;
+			if (m_y < 0)
+				m_y = HEIGHT - 1;
+			break;
+		case DOWN_KEY:
+			m_y++;
+			if (m_y >= HEIGHT)
+				m_y = 0;
+			break;
+		case LEFT_KEY:
+			m_x--;
+			if (m_x < 0)
+				m_x = WIDTH - 1;
+			break;
+		case RIGHT_KEY:
+			m_x++;
+			if (m_x >= WIDTH)
+				m_x = 0;
+			break;
+		case SPACE_KEY:
+			m_board[m_x][m_y].type = !m_board[m_x][m_y].type;
+			// DrawBoard();
+			PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y);
+			break;
+		case 'W':
+		case 'w':
+			m_board[m_x][m_y].color = WHITE;
+			PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y);
+			break;
+		case 'R':
+		case 'r':
+			m_board[m_x][m_y].color = RED;
+			PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y);
+			break;
+		case 'G':
+		case 'g':
+			m_board[m_x][m_y].color = GREEN;
+			PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y);
+			break;
+		case 'B':
+		case 'b':
+			m_board[m_x][m_y].color = BLUE;
+			PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y);
+			break;
+		case 'Y':
+		case 'y':
+			m_board[m_x][m_y].color = YELLOW;
+			PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y);
+			break;
+		case 'C':
+		case 'c':
+			m_board[m_x][m_y].color = CYAN;
+			PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y);
+			break;
+		case 'P':
+		case 'p':
+			m_board[m_x][m_y].color = PURPLE;
+			PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y);
+			break;
+		case 'A':
+		case 'a':
+			m_board[m_x][m_y].color = GRAY;
+			PrintCell(m_board[m_x][m_y], m_x + MAP_X, m_y + MAP_Y);
+			break;
+		default:
+			break;
 		}
 		GotoXY(m_x + MAP_X, m_y + MAP_Y);
 	}
-	else			//编辑设置
+	else // 编辑设置
 	{
 		CursorVisible(false);
 		switch (key)
 		{
-			case UP_KEY:
-				m_item_select--;
-				if (m_item_select<1) m_item_select = m_max_item;
+		case UP_KEY:
+			m_item_select--;
+			if (m_item_select < 1)
+				m_item_select = m_max_item;
+			break;
+		case DOWN_KEY:
+			m_item_select++;
+			if (m_item_select > m_max_item)
+				m_item_select = 1;
+			break;
+		case ENTER_KEY:
+		case RIGHT_KEY:
+			switch (m_item_select)
+			{
+			case 1: // 设置得分
+				GotoXY(SETTINGS_X + 3, SETTINGS_Y + 2);
+				CursorVisible(true);
+				std::cin >> m_score;
+				CursorVisible(false);
+				PrintString("              ", SETTINGS_X + 3, SETTINGS_Y + 2, WHITE); // 清除得分区域字符
 				break;
-			case DOWN_KEY:
-				m_item_select++;
-				if (m_item_select > m_max_item) m_item_select = 1;
+			case 2:
+				m_strip_number++;
 				break;
-			case ENTER_KEY:case RIGHT_KEY:
-				switch (m_item_select)
+			case 3:
+				m_bomb_number++;
+				break;
+			case 4:
+				m_pierce_number++;
+				break;
+			default:
+				break;
+			}
+			break;
+		case LEFT_KEY:
+			switch (m_item_select)
+			{
+			case 2:
+				if (m_strip_number > 0)
 				{
-					case 1:		//设置得分
-						GotoXY(SETTINGS_X + 3, SETTINGS_Y + 2);
-						CursorVisible(true);
-						std::cin >> m_score;
-						CursorVisible(false);
-						PrintString("              ", SETTINGS_X + 3, SETTINGS_Y + 2, WHITE);		//清除得分区域字符
-						break;
-					case 2:
-						m_strip_number++;
-						break;
-					case 3:
-						m_bomb_number++;
-						break;
-					case 4:
-						m_pierce_number++;
-						break;
-					default: break;
+					m_strip_number--;
+					PrintString("              ", SETTINGS_X + 7, SETTINGS_Y + 3, WHITE);
 				}
 				break;
-			case LEFT_KEY:
-				switch (m_item_select)
+			case 3:
+				if (m_bomb_number > 0)
 				{
-					case 2:
-						if (m_strip_number>0)
-						{
-							m_strip_number--;
-							PrintString("              ", SETTINGS_X + 7, SETTINGS_Y + 3, WHITE);
-						}
-						break;
-					case 3:
-						if (m_bomb_number > 0)
-						{
-							m_bomb_number--;
-							PrintString("              ", SETTINGS_X + 7, SETTINGS_Y + 4, WHITE);
-						}
-						break;
-					case 4:
-						if (m_pierce_number > 0)
-						{
-							m_pierce_number--;
-							PrintString("              ", SETTINGS_X + 8, SETTINGS_Y + 5, WHITE);
-						}
-						break;
-					default: break;
+					m_bomb_number--;
+					PrintString("              ", SETTINGS_X + 7, SETTINGS_Y + 4, WHITE);
 				}
-			default: break;
+				break;
+			case 4:
+				if (m_pierce_number > 0)
+				{
+					m_pierce_number--;
+					PrintString("              ", SETTINGS_X + 8, SETTINGS_Y + 5, WHITE);
+				}
+				break;
+			default:
+				break;
+			}
+		default:
+			break;
 		}
 		ShowInfo();
 	}
@@ -253,24 +295,41 @@ void CUI::ShowHelpInfo() const
 
 void CUI::SaveToFile() const
 {
-	ofstream SaveFile{ "GameData.dat" };
-	for (int j{ 0 }; j < HEIGHT; j++)
+	ofstream SaveFile{"GameData.dat"};
+	for (int j{0}; j < HEIGHT; j++)
 	{
-		for (int i{ 0 }; i < WIDTH; i++)
+		for (int i{0}; i < WIDTH; i++)
 		{
 			if (m_board[i][j].type == FULL_CELL)
 				SaveFile << 1;
-			else SaveFile << 0;
+			else
+				SaveFile << 0;
 			switch (m_board[i][j].color)
 			{
-				case	BLUE: SaveFile << 'B'; break;
-				case GREEN: SaveFile << 'G'; break;
-				case CYAN: SaveFile << 'C'; break;
-				case RED: SaveFile << 'R'; break;
-				case PURPLE: SaveFile << 'P'; break;
-				case YELLOW: SaveFile << 'Y'; break;
-				case WHITE: SaveFile << 'W'; break;
-				default: SaveFile << 'N'; break;
+			case BLUE:
+				SaveFile << 'B';
+				break;
+			case GREEN:
+				SaveFile << 'G';
+				break;
+			case CYAN:
+				SaveFile << 'C';
+				break;
+			case RED:
+				SaveFile << 'R';
+				break;
+			case PURPLE:
+				SaveFile << 'P';
+				break;
+			case YELLOW:
+				SaveFile << 'Y';
+				break;
+			case WHITE:
+				SaveFile << 'W';
+				break;
+			default:
+				SaveFile << 'N';
+				break;
 			}
 		}
 	}
@@ -289,12 +348,12 @@ void CUI::SaveToFile() const
 
 void CUI::LoadFromFile()
 {
-	ifstream OpenFile{ "GameData.dat" };
+	ifstream OpenFile{"GameData.dat"};
 	char ch;
-	//读取界面每个格子状态
-	for (int j{ 0 }; j < HEIGHT; j++)
+	// 读取界面每个格子状态
+	for (int j{0}; j < HEIGHT; j++)
 	{
-		for (int i{ 0 }; i < WIDTH; i++)
+		for (int i{0}; i < WIDTH; i++)
 		{
 			OpenFile.get(ch);
 			if (ch == '1')
@@ -304,41 +363,62 @@ void CUI::LoadFromFile()
 			OpenFile.get(ch);
 			switch (ch)
 			{
-				case 'B': m_board[i][j].color = BLUE; break;
-				case 'G': m_board[i][j].color = GREEN; break;
-				case 'C': m_board[i][j].color = CYAN; break;
-				case 'R': m_board[i][j].color = RED; break;
-				case 'P': m_board[i][j].color = PURPLE; break;
-				case 'Y': m_board[i][j].color = YELLOW; break;
-				case 'W': m_board[i][j].color = WHITE; break;
-				default:	 m_board[i][j].color = GRAY; break;
+			case 'B':
+				m_board[i][j].color = BLUE;
+				break;
+			case 'G':
+				m_board[i][j].color = GREEN;
+				break;
+			case 'C':
+				m_board[i][j].color = CYAN;
+				break;
+			case 'R':
+				m_board[i][j].color = RED;
+				break;
+			case 'P':
+				m_board[i][j].color = PURPLE;
+				break;
+			case 'Y':
+				m_board[i][j].color = YELLOW;
+				break;
+			case 'W':
+				m_board[i][j].color = WHITE;
+				break;
+			default:
+				m_board[i][j].color = GRAY;
+				break;
 			}
 		}
 	}
-	int i{ 0 };
+	int i{0};
 	char str[10];
-	//读取得分
-	do OpenFile.get(str[i++]);
-	while (str[i - 1] != ',' &&i < 10);
+	// 读取得分
+	do
+		OpenFile.get(str[i++]);
+	while (str[i - 1] != ',' && i < 10);
 	str[i - 1] = '\0';
-	m_score = atoi(str);		//将读取到的字符串转换成数字保存到m_score中
-	if (m_score < 0) m_score = 0;
-	//读取长条道具的个数
+	m_score = atoi(str); // 将读取到的字符串转换成数字保存到m_score中
+	if (m_score < 0)
+		m_score = 0;
+	// 读取长条道具的个数
 	i = 0;
-	do OpenFile.get(str[i++]);
-	while (str[i - 1] != ',' &&i < 10);
+	do
+		OpenFile.get(str[i++]);
+	while (str[i - 1] != ',' && i < 10);
 	str[i - 1] = '\0';
 	m_strip_number = atoi(str);
-	//读取炸弹道具的个数
+	// 读取炸弹道具的个数
 	i = 0;
-	do OpenFile.get(str[i++]);
-	while (str[i - 1] != ',' &&i < 10);
+	do
+		OpenFile.get(str[i++]);
+	while (str[i - 1] != ',' && i < 10);
 	str[i - 1] = '\0';
 	m_bomb_number = atoi(str);
-	//读取穿甲弹道具的个数
+	// 读取穿甲弹道具的个数
 	i = 0;
-	do OpenFile.get(str[i++]);
-	while (str[i - 1] != ',' &&i < 10);
+	do
+		OpenFile.get(str[i++]);
+	while (str[i - 1] != ',' && i < 10);
 	str[i - 1] = '\0';
 	m_pierce_number = atoi(str);
 	OpenFile.close();
